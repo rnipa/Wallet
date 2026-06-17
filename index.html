@@ -1,0 +1,2249 @@
+<!DOCTYPE html>
+
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Smart Pharmacy Wallet V6 PRO</title>
+
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="logo.png">
+
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:'Noto Sans Bengali',sans-serif;
+}
+
+body{
+background:#020617;
+color:white;
+padding:14px;
+}
+
+.container{
+max-width:1200px;
+margin:auto;
+padding-bottom:40px;
+}
+
+.topbar{
+display:flex;
+justify-content:space-between;
+align-items:center;
+gap:15px;
+flex-wrap:wrap;
+margin-bottom:20px;
+padding:18px;
+border-radius:24px;
+background:rgba(255,255,255,.05);
+border:1px solid rgba(255,255,255,.08);
+backdrop-filter:blur(12px);
+}
+
+.logo-area{
+display:flex;
+align-items:center;
+gap:15px;
+}
+
+.logo-area img{
+width:65px;
+height:65px;
+border-radius:20px;
+box-shadow:0 8px 20px rgba(0,0,0,.35);
+}
+
+.app-title{
+font-size:28px;
+font-weight:700;
+background:linear-gradient(90deg,#38bdf8,#22c55e);
+-webkit-background-clip:text;
+-webkit-text-fill-color:transparent;
+}
+
+.subtitle{
+font-size:13px;
+color:#94a3b8;
+margin-top:4px;
+}
+
+.card{
+background:rgba(255,255,255,.06);
+border:1px solid rgba(255,255,255,.08);
+border-radius:28px;
+padding:22px;
+margin-bottom:20px;
+backdrop-filter:blur(12px);
+}
+
+.coach-banner{
+padding:18px;
+border-radius:18px;
+margin-bottom:15px;
+font-weight:700;
+line-height:1.7;
+text-align:center;
+}
+
+.coach-safe{
+background:#14532d;
+color:#dcfce7;
+}
+
+.coach-warning{
+background:#78350f;
+color:#fef3c7;
+}
+
+.coach-danger{
+background:#7f1d1d;
+color:#fee2e2;
+}
+
+.suggestion-card{
+padding:18px;
+border-radius:18px;
+margin-bottom:15px;
+background:#111827;
+border:1px solid rgba(255,255,255,.08);
+line-height:1.8;
+}
+
+.forecast-card{
+margin-top:15px;
+padding:18px;
+border-radius:18px;
+background:#111827;
+border:1px solid rgba(255,255,255,.08);
+}
+
+.score-card{
+margin-top:15px;
+padding:18px;
+border-radius:18px;
+background:linear-gradient(145deg,#0f172a,#1e293b);
+border:1px solid rgba(255,255,255,.08);
+}
+
+.score-value{
+font-size:34px;
+font-weight:700;
+margin-top:8px;
+}
+
+.deposit-card{
+margin-top:18px;
+padding:20px;
+border-radius:22px;
+background:#111827;
+border:1px solid rgba(255,255,255,.08);
+}
+
+.history-card{
+margin-top:18px;
+padding:20px;
+border-radius:22px;
+background:#111827;
+border:1px solid rgba(255,255,255,.08);
+}
+.wallet-grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+gap:18px;
+margin-top:18px;
+}
+
+.wallet{
+padding:22px;
+border-radius:24px;
+background:linear-gradient(145deg,#111827,#1e293b);
+border:1px solid rgba(255,255,255,.05);
+}
+
+.wallet h3{
+font-size:16px;
+margin-bottom:12px;
+color:#cbd5e1;
+}
+
+.wallet p{
+font-size:30px;
+font-weight:700;
+}
+
+.grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+gap:16px;
+margin-top:15px;
+}
+
+input,select{
+width:100%;
+padding:14px;
+border:none;
+border-radius:16px;
+background:#1e293b;
+color:white;
+font-size:15px;
+margin-top:8px;
+}
+
+label{
+display:block;
+margin-bottom:8px;
+font-size:14px;
+color:#cbd5e1;
+}
+
+.form-group{
+display:flex;
+flex-direction:column;
+gap:8px;
+}
+
+.primary-btn{
+margin-top:18px;
+padding:14px 20px;
+border:none;
+border-radius:16px;
+font-weight:700;
+background:linear-gradient(90deg,#06b6d4,#22c55e);
+color:white;
+cursor:pointer;
+width:100%;
+font-size:16px;
+}
+
+.progress-wrap{
+margin-top:18px;
+}
+
+.progress-bar{
+height:28px;
+width:100%;
+background:#1e293b;
+border-radius:50px;
+overflow:hidden;
+margin-top:12px;
+}
+
+.progress-fill{
+height:100%;
+width:0%;
+background:linear-gradient(90deg,#22c55e,#06b6d4);
+transition:.4s;
+}
+
+.table-wrap{
+overflow:auto;
+margin-top:15px;
+border-radius:18px;
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+min-width:650px;
+}
+
+th{
+background:#1e293b;
+padding:14px;
+}
+
+td{
+padding:14px;
+border-bottom:1px solid rgba(255,255,255,.08);
+text-align:center;
+}
+
+.install-btn{
+display:none;
+padding:12px 18px;
+border:none;
+border-radius:16px;
+font-weight:700;
+background:linear-gradient(90deg,#2563eb,#06b6d4);
+color:white;
+cursor:pointer;
+}
+
+@media(max-width:768px){
+
+body{
+padding:10px;
+}
+
+.app-title{
+font-size:22px;
+}
+
+.wallet p{
+font-size:24px;
+}
+
+.card{
+padding:18px;
+}
+
+.install-btn{
+width:100%;
+}
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="topbar">
+
+<div class="logo-area">
+
+<img src="logo.png">
+
+<div>
+
+<div class="app-title">
+💊 Smart Pharmacy Wallet V6 PRO
+</div>
+
+<div class="subtitle">
+Smart Financial Discipline System
+</div>
+
+</div>
+
+</div>
+
+<button
+class="install-btn"
+id="installBtn">
+
+📲 Install App
+
+</button>
+
+</div>
+
+<div class="card">
+
+<h2>
+🎯 Installment Progress Dashboard
+</h2>
+
+<div
+id="coachBanner"
+class="coach-banner coach-safe">
+
+🎯 Smart Coach প্রস্তুত হচ্ছে...
+
+</div>
+
+<div
+id="dailySuggestion"
+class="suggestion-card">
+
+💡 আজকের আর্থিক পরামর্শ প্রস্তুত হচ্ছে...
+
+</div>
+<div id="progressText">
+Paid: ৳0 | Remaining: ৳50,000
+</div>
+
+<div class="progress-wrap">
+
+<div class="progress-bar">
+
+<div
+class="progress-fill"
+id="progressFill">
+</div>
+
+</div>
+
+</div>
+
+<div class="wallet-grid">
+
+<div class="wallet">
+
+<h3>
+💳 Installment Wallet
+</h3>
+
+<p id="walletInstallment">
+৳0
+</p>
+
+</div>
+
+<div class="wallet">
+
+<h3>
+👤 Personal Wallet
+</h3>
+
+<p id="walletPersonal">
+৳0
+</p>
+
+</div>
+
+<div class="wallet">
+
+<h3>
+💊 Medicine Wallet
+</h3>
+
+<p id="walletMedicine">
+৳0
+</p>
+
+</div>
+
+</div>
+
+<div
+class="wallet"
+id="dueTrackerCard"
+style="margin-top:18px">
+
+<h3>
+🎯 Installment Target Tracker
+</h3>
+
+<p id="dailyRequired">
+৳0 / day
+</p>
+
+<div
+id="dueInfo"
+style="color:#cbd5e1;margin-top:8px">
+</div>
+
+</div>
+
+<div class="forecast-card">
+
+<h3>
+📈 Forecast Completion
+</h3>
+
+<div id="forecastInfo">
+
+Forecast Loading...
+
+</div>
+
+</div>
+
+<div class="score-card">
+
+<h3>
+🏆 Discipline Score
+</h3>
+
+<div
+class="score-value"
+id="disciplineScore">
+
+100
+
+</div>
+
+<div id="achievementText">
+
+🥉 Beginner Saver
+
+</div>
+
+</div>
+
+</div>
+
+<div class="card">
+
+<h2>
+⚙️ Distribution Settings
+</h2>
+
+<div class="grid">
+
+<div class="form-group">
+
+<label>
+Installment %
+</label>
+
+<input
+type="number"
+id="installmentPercent"
+value="50">
+
+</div>
+
+<div class="form-group">
+
+<label>
+Personal %
+</label>
+
+<input
+type="number"
+id="personalPercent"
+value="20">
+
+</div>
+
+<div class="form-group">
+
+<label>
+Medicine %
+</label>
+
+<input
+type="number"
+id="medicinePercent"
+value="30">
+
+</div>
+
+<div class="form-group">
+
+<label>
+Monthly Installment Target
+</label>
+
+<input
+type="number"
+id="monthlyTarget"
+value="50000">
+
+</div>
+
+<div class="form-group">
+
+<label>
+Installment Due Day
+</label>
+
+<input
+type="number"
+id="dueDay"
+min="1"
+max="31"
+value="10">
+
+</div>
+
+</div>
+
+<button
+class="primary-btn"
+onclick="saveSettings()">
+
+💾 Save Settings
+
+</button>
+
+</div>
+<div class="card">
+
+<h2>
+💰 Direct Installment Deposit
+</h2>
+
+<div class="deposit-card">
+
+<div class="grid">
+
+<div class="form-group">
+
+<label>
+Deposit Amount
+</label>
+
+<input
+type="number"
+id="directDepositAmount"
+placeholder="সরাসরি কিস্তিতে জমা">
+
+</div>
+
+<div class="form-group">
+
+<label>
+Deposit Note
+</label>
+
+<input
+type="text"
+id="directDepositNote"
+placeholder="যেমন: অতিরিক্ত জমা">
+
+</div>
+
+</div>
+
+<button
+class="primary-btn"
+onclick="directInstallmentDeposit()">
+
+➕ Add Deposit
+
+</button>
+
+</div>
+
+</div>
+
+<div class="card">
+
+<h2>
+📜 Installment Deposit History
+</h2>
+
+<div class="history-card">
+
+<div class="table-wrap">
+
+<table>
+
+<thead>
+
+<tr>
+
+<th>Date</th>
+
+<th>Amount</th>
+
+<th>Note</th>
+
+</tr>
+
+</thead>
+
+<tbody id="depositHistoryTable">
+
+</tbody>
+
+</table>
+
+</div>
+
+</div>
+
+</div>
+
+<div class="card">
+
+<h2>
+➕ Daily Allocation Entry
+</h2>
+
+<div class="grid">
+
+<div class="form-group">
+
+<label>
+Date
+</label>
+
+<input
+type="date"
+id="entryDate">
+
+</div>
+
+<div class="form-group">
+
+<label>
+Today's Available Money
+</label>
+
+<input
+type="number"
+id="dailyAmount"
+placeholder="আজ হাতে থাকা টাকা লিখুন">
+
+</div>
+
+</div>
+
+<button
+class="primary-btn"
+onclick="addEntry()">
+
+✅ Save Entry
+
+</button>
+
+</div>
+
+<div class="card">
+
+<h2>
+💸 Withdraw Money
+</h2>
+
+<div class="grid">
+
+<div class="form-group">
+
+<label>
+Category
+</label>
+
+<select id="withdrawCategory">
+
+<option value="installment">
+Installment
+</option>
+
+<option value="personal">
+Personal
+</option>
+
+<option value="medicine">
+Medicine
+</option>
+
+</select>
+
+</div>
+
+<div class="form-group">
+
+<label>
+Amount
+</label>
+
+<input
+type="number"
+id="withdrawAmount"
+placeholder="টাকার পরিমাণ">
+
+</div>
+
+<div class="form-group">
+
+<label>
+Note
+</label>
+
+<input
+type="text"
+id="withdrawNote"
+placeholder="কারণে লিখুন">
+
+</div>
+
+</div>
+
+<button
+class="primary-btn"
+onclick="withdrawMoney()">
+
+💸 Withdraw
+
+</button>
+
+</div>
+<div class="card">
+
+<h2>
+📅 Monthly Allocation Report
+</h2>
+
+<select
+id="monthSelector"
+onchange="renderAll()"> </select>
+
+<div class="table-wrap">
+
+<table>
+
+<thead>
+
+<tr>
+
+<th>Date</th>
+<th>Total</th>
+<th>Installment</th>
+<th>Personal</th>
+<th>Medicine</th>
+
+</tr>
+
+</thead>
+
+<tbody id="allocationTable">
+
+</tbody>
+
+</table>
+
+</div>
+
+</div>
+
+<div class="card">
+
+<h2>
+📜 Withdrawal History
+</h2>
+
+<div class="table-wrap">
+
+<table>
+
+<thead>
+
+<tr>
+
+<th>Date</th>
+<th>Category</th>
+<th>Amount</th>
+<th>Note</th>
+
+</tr>
+
+</thead>
+
+<tbody id="withdrawTable">
+
+</tbody>
+
+</table>
+
+</div>
+
+</div>
+
+<div class="card">
+
+<h2>
+📈 Analytics Dashboard
+</h2>
+
+<canvas id="fundChart"></canvas>
+
+</div>
+
+<div class="card">
+
+<h2>
+🎖️ Achievement Center
+</h2>
+
+<div class="wallet-grid">
+
+<div class="wallet">
+
+<h3>
+🥉 Bronze Saver
+</h3>
+
+<p id="bronzeStatus">
+🔒 Locked
+</p>
+
+</div>
+
+<div class="wallet">
+
+<h3>
+🥈 Silver Saver
+</h3>
+
+<p id="silverStatus">
+🔒 Locked
+</p>
+
+</div>
+
+<div class="wallet">
+
+<h3>
+🥇 Gold Saver
+</h3>
+
+<p id="goldStatus">
+🔒 Locked
+</p>
+
+</div>
+
+<div class="wallet">
+
+<h3>
+👑 Master Saver
+</h3>
+
+<p id="masterStatus">
+🔒 Locked
+</p>
+
+</div>
+
+</div>
+
+</div>
+
+<div class="card">
+
+<h2>
+🚨 Smart Coach Center
+</h2>
+
+<div class="suggestion-card">
+
+<div id="coachMessage">
+
+আজকের আর্থিক পরামর্শ লোড হচ্ছে...
+
+</div>
+
+</div>
+
+</div>
+<div class="card">
+
+<h2>
+💾 Backup & Restore
+</h2>
+
+<div class="backup-grid">
+
+<div class="backup-card">
+
+<h3>
+⬇️ Export Backup
+</h3>
+
+<p>
+সব ডাটা JSON Backup হিসেবে Download হবে।
+</p>
+
+<button
+class="backup-btn"
+onclick="exportBackup()">
+
+Download Backup
+
+</button>
+
+</div>
+
+<div class="backup-card">
+
+<h3>
+⬆️ Import Backup
+</h3>
+
+<p>
+পুরাতন Backup Restore করুন।
+</p>
+
+<label class="custom-file">
+
+📂 Choose Backup File
+
+<input
+type="file"
+onchange="importBackup(event)">
+
+</label>
+
+</div>
+
+</div>
+
+<div class="action-row">
+
+<button
+class="warning-btn"
+onclick="resetWallets()">
+
+♻️ Reset Wallets
+
+</button>
+
+<button
+class="danger-btn"
+onclick="hardReset()">
+
+☢️ Full Hard Reset
+
+</button>
+
+</div>
+
+</div>
+
+<div class="card">
+
+<h2>
+📊 Smart Summary
+</h2>
+
+<div class="wallet-grid">
+
+<div class="wallet">
+
+<h3>
+💰 Total Installment Saved
+</h3>
+
+<p id="summaryInstallment">
+৳0
+</p>
+
+</div>
+
+<div class="wallet">
+
+<h3>
+🎯 Target Progress
+</h3>
+
+<p id="summaryProgress">
+0%
+</p>
+
+</div>
+
+<div class="wallet">
+
+<h3>
+🔥 Saving Streak
+</h3>
+
+<p id="savingStreak">
+0
+</p>
+
+</div>
+
+</div>
+
+</div>
+
+<div class="footer">
+
+✨ Smart Pharmacy Wallet V6 PRO
+
+<br><br>
+
+💊 Pharmacy Finance Manager
+
+</div>
+
+</div>
+
+<script>
+
+let deferredPrompt;
+
+window.addEventListener(
+'beforeinstallprompt',
+(e)=>{
+
+e.preventDefault();
+
+deferredPrompt=e;
+
+document
+.getElementById('installBtn')
+.style.display='block';
+
+});
+
+document
+.getElementById('installBtn')
+.addEventListener(
+'click',
+async ()=>{
+
+if(deferredPrompt){
+
+deferredPrompt.prompt();
+
+await deferredPrompt.userChoice;
+
+}
+
+});
+
+if('serviceWorker' in navigator){
+
+window.addEventListener(
+'load',
+()=>{
+
+navigator
+.serviceWorker
+.register('./sw.js');
+
+});
+
+}
+
+let appData=
+JSON.parse(
+localStorage.getItem(
+'smartPharmacyWalletV6'
+)
+)
+||
+{
+
+settings:{
+
+installmentPercent:50,
+
+personalPercent:20,
+
+medicinePercent:30,
+
+monthlyTarget:50000,
+
+dueDay:10
+
+},
+
+allocations:[],
+
+withdrawals:[],
+
+deposits:[],
+
+wallets:{
+
+installment:0,
+
+personal:0,
+
+medicine:0
+
+}
+
+};
+
+let chart;
+function saveData(){
+
+localStorage.setItem(
+'smartPharmacyWalletV6',
+JSON.stringify(appData)
+);
+
+}
+
+function saveSettings(){
+
+appData.settings.installmentPercent=
+Number(
+document.getElementById(
+'installmentPercent'
+).value
+);
+
+appData.settings.personalPercent=
+Number(
+document.getElementById(
+'personalPercent'
+).value
+);
+
+appData.settings.medicinePercent=
+Number(
+document.getElementById(
+'medicinePercent'
+).value
+);
+
+appData.settings.monthlyTarget=
+Number(
+document.getElementById(
+'monthlyTarget'
+).value
+);
+
+appData.settings.dueDay=
+Number(
+document.getElementById(
+'dueDay'
+).value
+);
+
+saveData();
+
+renderAll();
+
+alert(
+'✅ Settings Saved'
+);
+
+}
+
+function directInstallmentDeposit(){
+
+const amount=
+Number(
+document.getElementById(
+'directDepositAmount'
+).value
+);
+
+const note=
+document.getElementById(
+'directDepositNote'
+).value;
+
+if(!amount || amount<=0){
+
+alert(
+'টাকার পরিমাণ লিখুন'
+);
+
+return;
+
+}
+
+appData.wallets.installment += amount;
+
+appData.deposits.push({
+
+date:
+new Date()
+.toISOString()
+.split('T')[0],
+
+amount,
+
+note
+
+});
+
+saveData();
+
+renderAll();
+
+document.getElementById(
+'directDepositAmount'
+).value='';
+
+document.getElementById(
+'directDepositNote'
+).value='';
+
+alert(
+'✅ Deposit Added Successfully'
+);
+
+}
+
+function addEntry(){
+
+const date=
+document.getElementById(
+'entryDate'
+).value;
+
+const amount=
+Number(
+document.getElementById(
+'dailyAmount'
+).value
+);
+
+if(!date || !amount){
+
+alert(
+'তারিখ ও টাকার পরিমাণ দিন'
+);
+
+return;
+
+}
+
+const installment=
+Math.round(
+amount*
+appData.settings.installmentPercent
+/100
+);
+
+const personal=
+Math.round(
+amount*
+appData.settings.personalPercent
+/100
+);
+
+const medicine=
+Math.round(
+amount*
+appData.settings.medicinePercent
+/100
+);
+
+appData.allocations.push({
+
+date,
+
+amount,
+
+installment,
+
+personal,
+
+medicine
+
+});
+
+appData.wallets.installment += installment;
+
+appData.wallets.personal += personal;
+
+appData.wallets.medicine += medicine;
+
+saveData();
+
+renderAll();
+
+document.getElementById(
+'dailyAmount'
+).value='';
+
+}
+
+function withdrawMoney(){
+
+const category=
+document.getElementById(
+'withdrawCategory'
+).value;
+
+const amount=
+Number(
+document.getElementById(
+'withdrawAmount'
+).value
+);
+
+const note=
+document.getElementById(
+'withdrawNote'
+).value;
+
+if(
+appData.wallets[category]
+<
+amount
+){
+
+alert(
+'Wallet এ পর্যাপ্ত Balance নেই'
+);
+
+return;
+
+}
+
+appData.wallets[category]-=amount;
+
+appData.withdrawals.push({
+
+date:
+new Date()
+.toISOString()
+.split('T')[0],
+
+category,
+
+amount,
+
+note
+
+});
+
+saveData();
+
+renderAll();
+
+document.getElementById(
+'withdrawAmount'
+).value='';
+
+document.getElementById(
+'withdrawNote'
+).value='';
+
+}
+
+function renderWallets(){
+
+document.getElementById(
+'walletInstallment'
+).innerText=
+'৳'+
+appData.wallets.installment
+.toLocaleString();
+
+document.getElementById(
+'walletPersonal'
+).innerText=
+'৳'+
+appData.wallets.personal
+.toLocaleString();
+
+document.getElementById(
+'walletMedicine'
+).innerText=
+'৳'+
+appData.wallets.medicine
+.toLocaleString();
+
+}
+function renderMonths(){
+
+const selector=
+document.getElementById(
+'monthSelector'
+);
+
+selector.innerHTML='';
+
+const months=[
+...new Set(
+appData.allocations.map(
+a=>a.date.slice(0,7)
+)
+)
+];
+
+if(months.length===0){
+
+months.push(
+new Date()
+.toISOString()
+.slice(0,7)
+);
+
+}
+
+months.reverse();
+
+months.forEach(month=>{
+
+const op=
+document.createElement(
+'option'
+);
+
+op.value=month;
+
+op.textContent=month;
+
+selector.appendChild(op);
+
+});
+
+}
+
+function renderAllocationTable(){
+
+const month=
+document.getElementById(
+'monthSelector'
+).value;
+
+const filtered=
+appData.allocations.filter(
+a=>a.date.startsWith(month)
+);
+
+const tbody=
+document.getElementById(
+'allocationTable'
+);
+
+tbody.innerHTML='';
+
+filtered.forEach(a=>{
+
+tbody.innerHTML += `
+
+<tr>
+
+<td>${a.date}</td>
+
+<td>
+৳${a.amount.toLocaleString()}
+</td>
+
+<td>
+৳${a.installment.toLocaleString()}
+</td>
+
+<td>
+৳${a.personal.toLocaleString()}
+</td>
+
+<td>
+৳${a.medicine.toLocaleString()}
+</td>
+
+</tr>
+
+`;
+
+});
+
+const installmentTotal=
+filtered.reduce(
+(x,y)=>x+y.installment,
+0
+);
+
+const target=
+appData.settings.monthlyTarget;
+
+const percent=
+Math.min(
+(installmentTotal/target)*100,
+100
+);
+
+document.getElementById(
+'progressText'
+).innerText=
+
+`Paid: ৳${installmentTotal.toLocaleString()} | Remaining: ৳${Math.max(target-installmentTotal,0).toLocaleString()}`;
+
+document.getElementById(
+'progressFill'
+).style.width=
+`${percent}%`;
+
+document.getElementById(
+'summaryProgress'
+).innerText=
+percent.toFixed(0)+'%';
+
+document.getElementById(
+'summaryInstallment'
+).innerText=
+'৳'+installmentTotal.toLocaleString();
+
+renderChart(filtered);
+
+}
+
+function renderWithdrawals(){
+
+const tbody=
+document.getElementById(
+'withdrawTable'
+);
+
+tbody.innerHTML='';
+
+appData.withdrawals
+.slice()
+.reverse()
+.forEach(w=>{
+
+tbody.innerHTML += `
+
+<tr>
+
+<td>${w.date}</td>
+
+<td>${w.category}</td>
+
+<td>
+৳${w.amount.toLocaleString()}
+</td>
+
+<td>
+${w.note || '-'}
+</td>
+
+</tr>
+
+`;
+
+});
+
+}
+
+function renderDepositHistory(){
+
+const tbody=
+document.getElementById(
+'depositHistoryTable'
+);
+
+tbody.innerHTML='';
+
+appData.deposits
+.slice()
+.reverse()
+.forEach(d=>{
+
+tbody.innerHTML += `
+
+<tr>
+
+<td>${d.date}</td>
+
+<td>
+৳${d.amount.toLocaleString()}
+</td>
+
+<td>
+${d.note || '-'}
+</td>
+
+</tr>
+
+`;
+
+});
+
+}
+
+function renderChart(data){
+
+const ctx=
+document.getElementById(
+'fundChart'
+);
+
+const installment=
+data.reduce(
+(a,b)=>a+b.installment,
+0
+);
+
+const personal=
+data.reduce(
+(a,b)=>a+b.personal,
+0
+);
+
+const medicine=
+data.reduce(
+(a,b)=>a+b.medicine,
+0
+);
+
+if(chart){
+
+chart.destroy();
+
+}
+
+chart=
+new Chart(ctx,{
+
+type:'doughnut',
+
+data:{
+
+labels:[
+'Installment',
+'Personal',
+'Medicine'
+],
+
+datasets:[{
+
+data:[
+installment,
+personal,
+medicine
+],
+
+backgroundColor:[
+'#22c55e',
+'#06b6d4',
+'#f59e0b'
+]
+
+}]
+
+}
+
+});
+
+}
+function updateDueTracker(){
+
+const dueDay =
+appData.settings.dueDay || 10;
+
+const target =
+appData.settings.monthlyTarget || 0;
+
+const now =
+new Date();
+
+let dueDate =
+new Date(
+now.getFullYear(),
+now.getMonth(),
+dueDay
+);
+
+if(now.getDate() > dueDay){
+
+dueDate =
+new Date(
+now.getFullYear(),
+now.getMonth()+1,
+dueDay
+);
+
+}
+
+const diffDays =
+Math.max(
+1,
+Math.ceil(
+(dueDate-now)/
+(1000*60*60*24)
+)
+);
+
+const saved =
+appData.wallets.installment;
+
+const remaining =
+Math.max(
+0,
+target-saved
+);
+
+const daily =
+Math.ceil(
+remaining/diffDays
+);
+
+document.getElementById(
+'dailyRequired'
+).innerText =
+'৳'+
+daily.toLocaleString()+
+' / day';
+
+document.getElementById(
+'dueInfo'
+).innerHTML =
+
+'📅 Due Date: '+
+dueDate.toLocaleDateString()+
+'<br>'+
+
+'⏳ Days Left: '+
+diffDays+
+'<br>'+
+
+'💰 Remaining: ৳'+
+remaining.toLocaleString();
+
+const card =
+document.getElementById(
+'dueTrackerCard'
+);
+
+if(daily>2000){
+
+card.style.border=
+'2px solid #ef4444';
+
+}
+else if(daily>1000){
+
+card.style.border=
+'2px solid #f59e0b';
+
+}
+else{
+
+card.style.border=
+'2px solid #22c55e';
+
+}
+
+updateForecast(
+remaining,
+daily,
+diffDays
+);
+
+updateDisciplineScore(
+remaining,
+target,
+daily
+);
+
+}
+
+function updateForecast(
+remaining,
+daily,
+days
+){
+
+const forecast =
+document.getElementById(
+'forecastInfo'
+);
+
+if(remaining<=0){
+
+forecast.innerHTML=
+'🎉 Target Completed Successfully';
+
+return;
+
+}
+
+forecast.innerHTML=
+
+'📌 Remaining: ৳'+
+remaining.toLocaleString()
+
++'<br><br>'+
+
+'💰 Daily Needed: ৳'+
+daily.toLocaleString()
+
++'<br><br>'+
+
+'📅 '+days+
+' দিনের মধ্যে লক্ষ্য পূরণ সম্ভব';
+
+}
+
+function updateDisciplineScore(
+remaining,
+target,
+daily
+){
+
+let score = 100;
+
+const progress =
+((target-remaining)/target)*100;
+
+if(progress<25){
+
+score=40;
+
+}
+else if(progress<50){
+
+score=60;
+
+}
+else if(progress<75){
+
+score=80;
+
+}
+else{
+
+score=100;
+
+}
+
+document.getElementById(
+'disciplineScore'
+).innerText=score;
+
+let badge='🥉 Beginner Saver';
+
+if(score>=60)
+badge='🥈 Silver Saver';
+
+if(score>=80)
+badge='🥇 Gold Saver';
+
+if(score>=100)
+badge='👑 Master Saver';
+
+document.getElementById(
+'achievementText'
+).innerText=badge;
+
+updateAchievements(score);
+
+updateCoach(
+score,
+daily,
+remaining
+);
+
+}
+
+function updateAchievements(score){
+
+document.getElementById(
+'bronzeStatus'
+).innerText =
+score>=40
+?
+'✅ Unlocked'
+:
+'🔒 Locked';
+
+document.getElementById(
+'silverStatus'
+).innerText =
+score>=60
+?
+'✅ Unlocked'
+:
+'🔒 Locked';
+
+document.getElementById(
+'goldStatus'
+).innerText =
+score>=80
+?
+'✅ Unlocked'
+:
+'🔒 Locked';
+
+document.getElementById(
+'masterStatus'
+).innerText =
+score>=100
+?
+'✅ Unlocked'
+:
+'🔒 Locked';
+
+}
+
+function updateCoach(
+score,
+daily,
+remaining
+){
+
+const banner =
+document.getElementById(
+'coachBanner'
+);
+
+const message =
+document.getElementById(
+'coachMessage'
+);
+
+const suggestion =
+document.getElementById(
+'dailySuggestion'
+);
+
+if(score>=80){
+
+banner.className =
+'coach-banner coach-safe';
+
+banner.innerHTML=
+
+'✅ আপনি সঠিক পথে আছেন';
+
+message.innerHTML=
+
+'🎯 দারুণ! এই গতিতে চললে সময়মতো লক্ষ্য পূরণ হবে।';
+
+suggestion.innerHTML=
+
+'💡 আজ অতিরিক্ত ৳500 জমালে লক্ষ্য আরও দ্রুত পূরণ হবে।';
+
+}
+else if(score>=60){
+
+banner.className =
+'coach-banner coach-warning';
+
+banner.innerHTML=
+
+'⚠️ একটু বেশি মনোযোগ দরকার';
+
+message.innerHTML=
+
+'📌 প্রতিদিন অন্তত ৳'+
+daily.toLocaleString()+
+' জমাতে হবে।';
+
+suggestion.innerHTML=
+
+'💡 আজ সঞ্চয় করলে আগামীকালের চাপ কমবে।';
+
+}
+else{
+
+banner.className =
+'coach-banner coach-danger';
+
+banner.innerHTML=
+
+'🚨 জরুরি সতর্কতা';
+
+message.innerHTML=
+
+'🔥 এখনও ৳'+
+remaining.toLocaleString()+
+' বাকি আছে।';
+
+suggestion.innerHTML=
+
+'💰 আজই কিছু টাকা কিস্তিতে যোগ করুন।';
+
+}
+
+}
+function exportBackup(){
+
+const blob =
+new Blob(
+[
+JSON.stringify(
+appData,
+null,
+2
+)
+],
+{
+type:
+'application/json'
+}
+);
+
+const a =
+document.createElement(
+'a'
+);
+
+a.href =
+URL.createObjectURL(
+blob
+);
+
+a.download =
+'smart_pharmacy_v6_backup.json';
+
+a.click();
+
+}
+
+function importBackup(event){
+
+const file =
+event.target.files[0];
+
+if(!file) return;
+
+const reader =
+new FileReader();
+
+reader.onload =
+function(e){
+
+appData =
+JSON.parse(
+e.target.result
+);
+
+saveData();
+
+renderAll();
+
+alert(
+'✅ Backup Restored'
+);
+
+};
+
+reader.readAsText(file);
+
+}
+
+function resetWallets(){
+
+if(
+confirm(
+'সব Wallet Reset করতে চান?'
+)
+){
+
+appData.wallets = {
+
+installment:0,
+
+personal:0,
+
+medicine:0
+
+};
+
+saveData();
+
+renderAll();
+
+}
+
+}
+
+function hardReset(){
+
+if(
+confirm(
+'সব Data Delete হবে'
+)
+){
+
+localStorage.removeItem(
+'smartPharmacyWalletV6'
+);
+
+location.reload();
+
+}
+
+}
+
+function renderSummary(){
+
+const totalSaved =
+appData.wallets.installment;
+
+document.getElementById(
+'summaryInstallment'
+).innerText =
+'৳'+
+totalSaved.toLocaleString();
+
+const streak =
+appData.allocations.length;
+
+document.getElementById(
+'savingStreak'
+).innerText =
+streak;
+
+}
+
+function firstOpenCoach(){
+
+if(
+localStorage.getItem(
+'v6CoachShown'
+)
+) return;
+
+const messages = [
+
+'🎯 আজ কিছু টাকা জমালে আগামীকালের চাপ কমবে।',
+
+'💰 ছোট সঞ্চয়ও বড় লক্ষ্য পূরণ করে।',
+
+'🚀 আজকের সঞ্চয় আগামীকালের স্বাধীনতা।',
+
+'📈 লক্ষ্য পূরণের জন্য ধারাবাহিকতা সবচেয়ে গুরুত্বপূর্ণ।',
+
+'🏆 প্রতিদিন সামান্য জমালেও বড় অগ্রগতি হয়।',
+
+'🔥 আজ অন্তত কিছু টাকা Installment Wallet এ যোগ করুন।'
+
+];
+
+const randomMessage =
+
+messages[
+Math.floor(
+Math.random()*
+messages.length
+)
+];
+
+setTimeout(()=>{
+
+alert(
+
+'🧠 Smart Coach\n\n'+
+
+randomMessage+
+
+'\n\n'+
+
+'আজকের লক্ষ্য পূরণে কাজ শুরু করুন।'
+
+);
+
+},1200);
+
+localStorage.setItem(
+'v6CoachShown',
+'1'
+);
+
+}
+
+function renderAll(){
+
+renderMonths();
+
+renderWallets();
+
+renderAllocationTable();
+
+renderWithdrawals();
+
+renderDepositHistory();
+
+updateDueTracker();
+
+renderSummary();
+
+}
+
+document.getElementById(
+'entryDate'
+).value =
+new Date()
+.toISOString()
+.split('T')[0];
+
+renderAll();
+
+firstOpenCoach();
+
+</script>
+
+</body>
+</html>
