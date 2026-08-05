@@ -1,6 +1,6 @@
 {
   "name": "Smart Pharmacy Wallet",
-  "short_name": "PharmacyWallet",
+  "short_name": "Wallet",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#020617",
