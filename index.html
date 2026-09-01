@@ -1,394 +1,908 @@
+
 <!DOCTYPE html>
-<html lang="bn"><head><meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Customer Ledger v3.4 Fixed</title>
-<style>
-body{
-font-family:Arial,sans-serif;
-margin:0;
-padding:24px;
-background:linear-gradient(135deg,#0f172a,#1e3a8a,#06b6d4);
-min-height:100vh;
-color:#1f2937;
-}
-.wrap{max-width:900px;margin:auto}.card{
-background:rgba(255,255,255,.95);
-backdrop-filter:blur(10px);
-padding:18px;
-border-radius:18px;
-margin-bottom:16px;
-box-shadow:0 10px 30px rgba(0,0,0,.15);
-border:1px solid rgba(255,255,255,.4);
-}
-input,select,button{width:100%;padding:10px;margin-top:8px}.row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-button{background:linear-gradient(135deg,#2563eb,#06b6d4);color:#fff;border:none;border-radius:12px;font-weight:bold;transition:.2s}.danger{background:#dc3545}
-.item{border:1px solid #dbeafe;border-radius:12px;padding:12px;margin-top:8px;cursor:pointer;background:#f8fbff}
-</style>
-<link rel="manifest" href="./manifest.json">
-<meta name="theme-color" content="#2563eb">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Customer Ledger">
-
-<style>
-#installAppBtn{
-    display:none;
-    position:fixed;
-    left:16px;
-    right:16px;
-    bottom:16px;
-    z-index:9999;
-    padding:14px 18px;
-    border:0;
-    border-radius:16px;
-    background:linear-gradient(135deg,#16a34a,#2563eb);
-    color:#fff;
-    font-size:16px;
-    font-weight:700;
-    box-shadow:0 10px 30px rgba(0,0,0,.25);
-}
-#installAppBtn.show{display:block}
-</style>
-</head><body>
-<button id="installAppBtn" type="button">📲 মোবাইলে App Install করুন</button>
-<div class="wrap">
-<div class="card"><h2>💳 Customer Ledger v3.5 Fixed</h2><p style='margin-top:6px;color:#475569'>Modern Dashboard Preview</p>
-<div class="row">
-<div><b id="totalCustomers">0</b><br><small>কাস্টমার</small></div>
-<div><b id="totalBalance">৳0</b><br><small>মোট ব্যালেন্স</small></div><div><b id="totalCommission">৳0</b><br><small>মোট কমিশন</small></div>
-</div>
-</div>
-<div class="card"><input id="n" placeholder="নাম"><input id="m" type="tel" inputmode="tel" autocomplete="tel" placeholder="মোবাইল: 017XXXXXXXX / +88017XXXXXXXX">
-<button onclick="add()">কাস্টমার যোগ করুন</button></div>
-<div class="card"><input id="q" placeholder="সার্চ" oninput="draw()"><div id="list"></div></div>
-<div class="card">
-<div id="sel">কাস্টমার নির্বাচন করুন</div>
-<select id="t"><option value="receive">গ্রহণ</option><option value="withdraw">প্রদান</option></select>
-<input id="a" type="number" placeholder="টাকার পরিমাণ">
-<input id="r" type="number" value="5" placeholder="প্রতি ১০০০ চার্জ">
-<div class="row"><button onclick="tx()">সংরক্ষণ</button><button onclick="editCustomer()">এডিট</button></div><div class="row"><button onclick="clearForm()">ফর্ম ক্লিয়ার</button><button class="danger" onclick="del()">ডিলিট</button></div>
-</div>
-<div class="card">
-<h3>👤 Customer Profile</h3>
-<div id="profile">কাস্টমার নির্বাচন করুন</div>
-<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:10px">
-<button onclick="printLedger()">🖨️ Print</button>
-<button onclick="backupData()">💾 Backup</button>
-<button onclick="document.getElementById('restoreFile').click()">📂 Restore</button><input id="restoreFile" type="file" accept=".json" style="display:none" onchange="restoreData(event)">
-<button onclick="document.getElementById('his').scrollIntoView({behavior:'smooth'})">📝 Tx Edit/Delete</button>
-</div>
-</div>
-<div class="card"><h3>📒 Ledger Statement</h3><div id="his"></div></div>
-
-<script>
-const STORAGE_KEY="customer_ledger_v35";
-let db=[],cur=null;
-
-const $=id=>document.getElementById(id);
-const uid=()=>crypto.randomUUID?crypto.randomUUID():Date.now()+"-"+Math.random();
-
-function save(){localStorage.setItem(STORAGE_KEY,JSON.stringify(db));}
-
-function load(){
- try{
-  db=JSON.parse(localStorage.getItem(STORAGE_KEY)||"[]");
-  if(!Array.isArray(db))db=[];
-  db.forEach(c=>{c.tx=Array.isArray(c.tx)?c.tx:[];c.balance=Number(c.balance)||0;});
- }catch(e){db=[];}
-}
-
-function normalizeMobile(v){
- let s=String(v||"").trim().replace(/\s+/g,"");
- if(s.startsWith("+880"))s=s.substring(1);
- if(s.startsWith("01"))s="880"+s;
- return s;
-}
-
-function validMobile(v){return !v||/^8801\d{9}$/.test(v);}
-
-function esc(v){
- return String(v??"").replace(/&/g,"&amp;").replace(/</g,"&lt;")
- .replace(/>/g,"&gt;").replace(/"/g,"&quot;");
-}
-
-function updateStats(){
- $("totalCustomers").textContent=db.length;
- $("totalBalance").textContent="৳"+db.reduce((s,c)=>s+Number(c.balance||0),0).toFixed(2);
- $("totalCommission").textContent="৳"+db.reduce((s,c)=>s+(c.tx||[]).reduce((x,t)=>x+Number(t.charge||0),0),0).toFixed(2);
-}
-
-function add(){
- const name=$("n").value.trim();
- const mobile=normalizeMobile($("m").value);
-
- if(!name)return alert("কাস্টমারের নাম লিখুন।");
- if(!validMobile(mobile))return alert("সঠিক মোবাইল নম্বর দিন। উদাহরণ: 017XXXXXXXX বা +88017XXXXXXXX");
- if(db.some(c=>c.mobile===mobile&&mobile))return alert("এই মোবাইল নম্বর আগে থেকেই আছে।");
-
- const c={id:uid(),name,mobile,balance:0,tx:[]};
- db.push(c);cur=c;save();
- $("n").value="";$("m").value="";
- draw();selectCustomer(c.id);
- alert("কাস্টমার সফলভাবে যোগ হয়েছে।");
-}
-
-function selectCustomer(id){
- cur=db.find(c=>c.id===id)||null;
- if(!cur)return;
- $("sel").innerHTML=`<b>${esc(cur.name)}</b> | ৳${cur.balance.toFixed(2)}`;
- $("profile").innerHTML=`<b>${esc(cur.name)}</b><br>📱 ${esc(cur.mobile||"নম্বর নেই")}<br>💰 ৳${cur.balance.toFixed(2)}`;
- historyView();
-}
-
-function draw(){
- updateStats();
- const k=$("q").value.trim().toLowerCase();
- $("list").innerHTML="";
- const rows=db.filter(c=>c.name.toLowerCase().includes(k)||c.mobile.includes(k));
- if(!rows.length){$("list").innerHTML="<div class='item'>কোন কাস্টমার নেই</div>";return;}
- rows.forEach(c=>{
-  const d=document.createElement("div");
-  d.className="item";
-  d.innerHTML=`<b>${esc(c.name)}</b><br>📱 ${esc(c.mobile||"নম্বর নেই")}<br>💰 ৳${c.balance.toFixed(2)}`;
-  d.onclick=()=>selectCustomer(c.id);
-  $("list").appendChild(d);
- });
-}
-
-function historyView(){
- if(!cur){$("his").innerHTML="কাস্টমার নির্বাচন করুন";return;}
- const txs=cur.tx.slice().reverse();
- if(!txs.length){$("his").innerHTML="কোন লেনদেন নেই";return;}
- $("his").innerHTML=txs.map(t=>`
- <div class="item">
- <b>${t.type==="receive"?"🟢 গ্রহণ":"🔴 প্রদান"}</b><br>
- 📅 ${new Date(t.date).toLocaleString("bn-BD")}<br>
- 💵 ৳${Number(t.amount).toFixed(2)}<br>
- 💳 চার্জ: ৳${Number(t.charge||0).toFixed(2)}<br>
- 💰 ব্যালেন্স: ৳${Number(t.balance).toFixed(2)}
- <div class="row">
- <button onclick="editTx('${t.id}')">✏️ Edit</button>
- <button class="danger" onclick="deleteTx('${t.id}')">🗑️ Delete</button>
- </div></div>`).join("");
-}
-
-function tx(){
- if(!cur)return alert("কাস্টমার নির্বাচন করুন।");
- const amount=Number($("a").value);
- if(!amount||amount<=0)return alert("সঠিক টাকার পরিমাণ লিখুন।");
-
- const type=$("t").value;
- const rate=Math.max(0,Number($("r").value)||0);
- let charge=type==="receive"?Math.floor(amount/1000)*rate:0;
- let net=type==="receive"?amount-charge:amount;
-
- if(type==="receive")cur.balance+=net;
- else cur.balance-=amount;
-
- const t={id:uid(),date:new Date().toISOString(),type,amount,charge,net,balance:cur.balance};
- cur.tx.push(t);
-
- save();draw();selectCustomer(cur.id);
- $("a").value="";
-
- if(cur.mobile){
-  const number=normalizeMobile(cur.mobile);
-  const msg=type==="receive"
-   ? `🏪 Rubaiya Pharmacy\n\nপ্রিয় ${cur.name},\n\nআপনার থেকে গ্রহণ: ৳${amount.toFixed(2)}\nসার্ভিস চার্জ: ৳${charge.toFixed(2)}\nব্যালেন্সে যোগ: ৳${net.toFixed(2)}\n\nবর্তমান ব্যালেন্স: ৳${cur.balance.toFixed(2)}`
-   : `🏪 Rubaiya Pharmacy\n\nপ্রিয় ${cur.name},\n\nআপনাকে প্রদান করা হয়েছে: ৳${amount.toFixed(2)}\n\nসার্ভিস চার্জ: ৳0.00\nবর্তমান ব্যালেন্স: ৳${cur.balance.toFixed(2)}`;
-  window.open("https://wa.me/"+number+"?text="+encodeURIComponent(msg),"_blank");
- }
-}
-
-function editTx(id){
- if(!cur)return;
- const t=cur.tx.find(x=>x.id===id);
- if(!t)return;
- const amount=Number(prompt("নতুন টাকার পরিমাণ:",t.amount));
- if(!amount||amount<=0)return;
- const type=prompt("receive অথবা withdraw:",t.type);
- if(type!=="receive"&&type!=="withdraw")return alert("সঠিক type দিন।");
-
- t.amount=amount;t.type=type;
- recalc();
- save();draw();selectCustomer(cur.id);
-}
-
-function deleteTx(id){
- if(!cur||!confirm("এই লেনদেনটি মুছে ফেলবেন?"))return;
- cur.tx=cur.tx.filter(t=>t.id!==id);
- recalc();save();draw();selectCustomer(cur.id);
-}
-
-function recalc(){
- let balance=0;
- const rate=Math.max(0,Number($("r").value)||5);
- cur.tx.sort((a,b)=>new Date(a.date)-new Date(b.date));
- cur.tx.forEach(t=>{
-  if(t.type==="receive"){
-   t.charge=Math.floor(Number(t.amount)/1000)*rate;
-   t.net=Number(t.amount)-t.charge;
-   balance+=t.net;
-  }else{
-   t.charge=0;t.net=Number(t.amount);balance-=t.amount;
-  }
-  t.balance=balance;
- });
- cur.balance=balance;
-}
-
-function editCustomer(){
- if(!cur)return alert("কাস্টমার নির্বাচন করুন।");
- const name=prompt("নাম:",cur.name);
- if(name===null)return;
- const mobile=normalizeMobile(prompt("মোবাইল:",cur.mobile?"+"+cur.mobile:""));
- if(!validMobile(mobile))return alert("সঠিক মোবাইল নম্বর দিন।");
- if(db.some(c=>c.id!==cur.id&&c.mobile===mobile&&mobile))return alert("এই নম্বর অন্য কাস্টমারের আছে।");
- cur.name=name.trim();cur.mobile=mobile;save();draw();selectCustomer(cur.id);
-}
-
-function del(){
- if(!cur)return alert("কাস্টমার নির্বাচন করুন।");
- if(!confirm("কাস্টমার ও সব লেনদেন মুছে ফেলবেন?"))return;
- db=db.filter(c=>c.id!==cur.id);cur=null;save();
- $("sel").textContent="কাস্টমার নির্বাচন করুন";$("profile").textContent="কাস্টমার নির্বাচন করুন";$("his").innerHTML="";draw();
-}
-
-function clearForm(){
- $("n").value="";$("m").value="";$("a").value="";cur=null;
- $("sel").textContent="কাস্টমার নির্বাচন করুন";$("profile").textContent="কাস্টমার নির্বাচন করুন";$("his").innerHTML="";
-}
-
-function backupData(){
- const blob=new Blob([JSON.stringify(db,null,2)],{type:"application/json"});
- const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="customer-ledger-backup.json";a.click();
-}
-
-function restoreData(e){
- const f=e.target.files[0];if(!f)return;
- const r=new FileReader();
- r.onload=()=>{try{const x=JSON.parse(r.result);if(!Array.isArray(x))throw 0;db=x;save();cur=null;draw();alert("Backup Restore সফল হয়েছে।");}catch(_){alert("Invalid backup file.");}};
- r.readAsText(f);e.target.value="";
-}
-
-function printLedger(){
-    if(!cur){
-        alert("কাস্টমার নির্বাচন করুন।");
-        return;
-    }
-
-    const w=window.open("","_blank");
-    if(!w){
-        alert("Popup blocked. Browser থেকে popup allow করুন।");
-        return;
-    }
-
-    const rows=cur.tx.map(t=>`
-        <div class="tx">
-            <div class="line">
-                <span>${t.type==="receive"?"গ্রহণ":"প্রদান"}</span>
-                <b>৳${Number(t.amount||0).toFixed(2)}</b>
-            </div>
-            <div class="muted">${new Date(t.date).toLocaleString("bn-BD")}</div>
-            <div class="line">
-                <span>চার্জ</span>
-                <span>৳${Number(t.charge||0).toFixed(2)}</span>
-            </div>
-            <div class="line">
-                <span>ব্যালেন্স</span>
-                <b>৳${Number(t.balance||0).toFixed(2)}</b>
-            </div>
-        </div>
-    `).join("");
-
-    w.document.write(`<!DOCTYPE html>
 <html lang="bn">
 <head>
 <meta charset="UTF-8">
-<title>Receipt</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Pharmacy Wallet</title>
+
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="logo.png">
+
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <style>
-@page{size:58mm auto;margin:0}
-*{box-sizing:border-box}
-html,body{margin:0;padding:0;width:58mm;background:#fff}
-body{font-family:Arial,"Noto Sans Bengali",sans-serif;font-size:11px;color:#000;padding:3mm}
-.receipt{width:52mm;margin:auto}
-.center{text-align:center}
-.shop{font-size:16px;font-weight:700}
-.title{font-size:12px;font-weight:700;margin:2px 0 6px}
-.line{display:flex;justify-content:space-between;gap:8px;margin:2px 0}
-.hr{border-top:1px dashed #000;margin:6px 0}
-.customer{line-height:1.5}
-.tx{padding:5px 0;border-bottom:1px dashed #999}
-.muted{font-size:9px;color:#333;margin:2px 0}
-.total{font-size:14px;font-weight:700;margin:6px 0}
-.footer{text-align:center;font-size:9px;margin-top:8px;line-height:1.5}
-.no-print{margin-top:10px;width:100%;padding:7px;border:1px solid #000;background:#fff}
-@media print{.no-print{display:none}}
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:'Noto Sans Bengali',sans-serif;
+}
+
+body{
+background:#020617;
+color:white;
+padding:14px;
+}
+
+.container{
+max-width:1200px;
+margin:auto;
+padding-bottom:40px;
+}
+
+.topbar{
+display:flex;
+justify-content:space-between;
+align-items:center;
+gap:15px;
+flex-wrap:wrap;
+margin-bottom:20px;
+padding:18px;
+border-radius:24px;
+background:rgba(255,255,255,0.05);
+border:1px solid rgba(255,255,255,0.08);
+backdrop-filter:blur(12px);
+}
+
+.logo-area{
+display:flex;
+align-items:center;
+gap:15px;
+}
+
+.logo-area img{
+width:65px;
+height:65px;
+border-radius:20px;
+box-shadow:0 8px 20px rgba(0,0,0,0.35);
+}
+
+.app-title{
+font-size:28px;
+font-weight:700;
+background:linear-gradient(90deg,#38bdf8,#22c55e);
+-webkit-background-clip:text;
+-webkit-text-fill-color:transparent;
+}
+
+.subtitle{
+font-size:13px;
+color:#94a3b8;
+margin-top:4px;
+}
+
+.install-btn{
+display:none;
+padding:12px 18px;
+border:none;
+border-radius:16px;
+font-weight:700;
+background:linear-gradient(90deg,#2563eb,#06b6d4);
+color:white;
+cursor:pointer;
+}
+
+.card{
+background:rgba(255,255,255,0.06);
+border:1px solid rgba(255,255,255,0.08);
+border-radius:28px;
+padding:22px;
+margin-bottom:20px;
+backdrop-filter:blur(12px);
+box-shadow:0 10px 25px rgba(0,0,0,0.3);
+}
+
+.card h2{
+font-size:22px;
+margin-bottom:18px;
+}
+
+.wallet-grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+gap:18px;
+margin-top:18px;
+}
+
+.wallet{
+padding:22px;
+border-radius:24px;
+background:linear-gradient(145deg,#111827,#1e293b);
+border:1px solid rgba(255,255,255,0.05);
+}
+
+.wallet h3{
+font-size:16px;
+margin-bottom:12px;
+color:#cbd5e1;
+}
+
+.wallet p{
+font-size:30px;
+font-weight:700;
+}
+
+.grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+gap:16px;
+margin-top:15px;
+}
+
+input,select{
+width:100%;
+padding:14px;
+border:none;
+border-radius:16px;
+background:#1e293b;
+color:white;
+font-size:15px;
+margin-top:8px;
+}
+
+label{
+display:block;
+margin-bottom:8px;
+font-size:14px;
+color:#cbd5e1;
+}
+
+.form-group{
+display:flex;
+flex-direction:column;
+gap:8px;
+}
+
+.primary-btn{
+margin-top:18px;
+padding:14px 20px;
+border:none;
+border-radius:16px;
+font-weight:700;
+background:linear-gradient(90deg,#06b6d4,#22c55e);
+color:white;
+cursor:pointer;
+width:100%;
+font-size:16px;
+}
+
+.progress-wrap{
+margin-top:18px;
+}
+
+.progress-bar{
+height:28px;
+width:100%;
+background:#1e293b;
+border-radius:50px;
+overflow:hidden;
+margin-top:12px;
+}
+
+.progress-fill{
+height:100%;
+width:0%;
+background:linear-gradient(90deg,#22c55e,#06b6d4);
+transition:0.4s;
+}
+
+.table-wrap{
+overflow:auto;
+margin-top:15px;
+border-radius:18px;
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+min-width:650px;
+}
+
+th{
+background:#1e293b;
+padding:14px;
+}
+
+td{
+padding:14px;
+border-bottom:1px solid rgba(255,255,255,0.08);
+text-align:center;
+}
+
+.backup-grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+gap:18px;
+margin-top:18px;
+}
+
+.backup-card{
+background:#111827;
+padding:22px;
+border-radius:22px;
+border:1px solid rgba(255,255,255,0.05);
+}
+
+.backup-card h3{
+margin-bottom:10px;
+}
+
+.backup-card p{
+color:#94a3b8;
+margin-bottom:16px;
+line-height:1.5;
+}
+
+.backup-btn{
+padding:13px 18px;
+border:none;
+border-radius:14px;
+font-weight:700;
+background:linear-gradient(90deg,#2563eb,#06b6d4);
+color:white;
+cursor:pointer;
+}
+
+.custom-file{
+display:inline-block;
+padding:13px 18px;
+border-radius:14px;
+background:#334155;
+cursor:pointer;
+font-weight:600;
+}
+
+input[type=file]{
+display:none;
+}
+
+.action-row{
+display:flex;
+gap:12px;
+flex-wrap:wrap;
+margin-top:20px;
+}
+
+.danger-btn{
+padding:13px 18px;
+border:none;
+border-radius:14px;
+font-weight:700;
+cursor:pointer;
+background:#dc2626;
+color:white;
+}
+
+.warning-btn{
+padding:13px 18px;
+border:none;
+border-radius:14px;
+font-weight:700;
+cursor:pointer;
+background:#f59e0b;
+color:black;
+}
+
+.footer{
+text-align:center;
+padding:30px 10px;
+color:#94a3b8;
+font-size:14px;
+}
+
+@media(max-width:768px){
+
+body{
+padding:10px;
+}
+
+.topbar{
+padding:16px;
+}
+
+.logo-area{
+align-items:flex-start;
+}
+
+.logo-area img{
+width:58px;
+height:58px;
+}
+
+.app-title{
+font-size:22px;
+line-height:1.3;
+}
+
+.card{
+padding:18px;
+border-radius:24px;
+}
+
+.card h2{
+font-size:20px;
+}
+
+.wallet{
+padding:18px;
+}
+
+.wallet p{
+font-size:24px;
+}
+
+.primary-btn{
+font-size:15px;
+}
+
+.install-btn{
+width:100%;
+}
+
+}
 </style>
 </head>
+
 <body>
-<div class="receipt">
-<div class="center">
-<div class="shop">Rubaiya Pharmacy</div>
-<div class="title">CUSTOMER LEDGER</div>
-</div>
-<div class="hr"></div>
-<div class="customer">
-<b>কাস্টমার:</b> ${esc(cur.name)}<br>
-<b>মোবাইল:</b> ${esc(cur.mobile||"N/A")}
-</div>
-<div class="hr"></div>
-${rows || '<div class="center">কোন লেনদেন নেই</div>'}
-<div class="hr"></div>
-<div class="line total">
-<span>বর্তমান ব্যালেন্স</span>
-<span>৳${Number(cur.balance||0).toFixed(2)}</span>
-</div>
-<div class="footer">ধন্যবাদ ❤️<br>আপনার লেনদেনের জন্য কৃতজ্ঞ</div>
-<button class="no-print" onclick="window.print()">🖨️ Print</button>
-</div>
-</body>
-</html>`);
-    w.document.close();
-    w.focus();
-    setTimeout(()=>w.print(),300);
-}
 
-load();draw();
-</script>
+<div class="container">
+
+<div class="topbar">
+
+<div class="logo-area">
+<img src="logo.png">
+
+<div>
+<div class="app-title">💊 Smart Pharmacy Wallet</div>
+<div class="subtitle">Offline Pharmacy Fund Allocation & Wallet Manager</div>
+</div>
+</div>
+
+<button class="install-btn" id="installBtn">📲 Install App</button>
+
+</div>
+
+<div class="card">
+<h2>🎯 Installment Progress Dashboard</h2>
+
+<div id="progressText">Paid: ৳0 | Remaining: ৳50,000</div>
+
+<div class="progress-wrap">
+<div class="progress-bar">
+<div class="progress-fill" id="progressFill"></div>
+</div>
+</div>
+
+<div class="wallet-grid">
+
+<div class="wallet">
+<h3>💳 Installment Wallet</h3>
+<p id="walletInstallment">৳0</p>
+</div>
+
+<div class="wallet">
+<h3>👤 Personal Wallet</h3>
+<p id="walletPersonal">৳0</p>
+</div>
+
+<div class="wallet">
+<h3>💊 Medicine Wallet</h3>
+<p id="walletMedicine">৳0</p>
+</div>
+
+</div>
+</div>
+
+<div class="card">
+<h2>⚙️ Distribution Settings</h2>
+
+<div class="grid">
+
+<div class="form-group">
+<label>Installment %</label>
+<input type="number" id="installmentPercent" value="50">
+</div>
+
+<div class="form-group">
+<label>Personal %</label>
+<input type="number" id="personalPercent" value="20">
+</div>
+
+<div class="form-group">
+<label>Medicine %</label>
+<input type="number" id="medicinePercent" value="30">
+</div>
+
+<div class="form-group">
+<label>Monthly Installment Target</label>
+<input type="number" id="monthlyTarget" value="50000">
+</div>
+
+</div>
+
+<button class="primary-btn" onclick="saveSettings()">💾 Save Settings</button>
+
+</div>
+
+<div class="card">
+<h2>➕ Daily Allocation Entry</h2>
+
+<div class="grid">
+
+<div class="form-group">
+<label>Date</label>
+<input type="date" id="entryDate">
+</div>
+
+<div class="form-group">
+<label>Today's Available Money</label>
+<input type="number" id="dailyAmount" placeholder="আজ হাতে থাকা টাকা লিখুন">
+</div>
+
+</div>
+
+<button class="primary-btn" onclick="addEntry()">✅ Save Entry</button>
+
+</div>
+
+<div class="card">
+<h2>💸 Withdraw Money</h2>
+
+<div class="grid">
+
+<div class="form-group">
+<label>Category</label>
+
+<select id="withdrawCategory">
+<option value="installment">Installment</option>
+<option value="personal">Personal</option>
+<option value="medicine">Medicine</option>
+</select>
+</div>
+
+<div class="form-group">
+<label>Amount</label>
+<input type="number" id="withdrawAmount" placeholder="টাকার পরিমাণ">
+</div>
+
+<div class="form-group">
+<label>Note</label>
+<input type="text" id="withdrawNote" placeholder="কারণে লিখুন">
+</div>
+
+</div>
+
+<button class="primary-btn" onclick="withdrawMoney()">💸 Withdraw</button>
+
+</div>
+
+<div class="card">
+
+<h2>📅 Monthly Allocation Report</h2>
+
+<select id="monthSelector" onchange="renderAll()"></select>
+
+<div class="table-wrap">
+
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Total</th>
+<th>Installment</th>
+<th>Personal</th>
+<th>Medicine</th>
+</tr>
+</thead>
+
+<tbody id="allocationTable"></tbody>
+
+</table>
+
+</div>
+
+</div>
+
+<div class="card">
+
+<h2>📜 Withdrawal History</h2>
+
+<div class="table-wrap">
+
+<table>
+
+<thead>
+<tr>
+<th>Date</th>
+<th>Category</th>
+<th>Amount</th>
+<th>Note</th>
+</tr>
+</thead>
+
+<tbody id="withdrawTable"></tbody>
+
+</table>
+
+</div>
+
+</div>
+
+<div class="card">
+<h2>📈 Analytics</h2>
+<canvas id="fundChart"></canvas>
+</div>
+
+<div class="card">
+
+<h2>💾 Backup & Restore</h2>
+
+<div class="backup-grid">
+
+<div class="backup-card">
+
+<h3>⬇️ Export Backup</h3>
+
+<p>
+সব ডাটা JSON Backup হিসেবে Download হবে।
+</p>
+
+<button class="backup-btn" onclick="exportBackup()">Download Backup</button>
+
+</div>
+
+<div class="backup-card">
+
+<h3>⬆️ Import Backup</h3>
+
+<p>
+পুরাতন Backup Restore করুন।
+</p>
+
+<label class="custom-file">
+📂 Choose Backup File
+<input type="file" onchange="importBackup(event)">
+</label>
+
+</div>
+
+</div>
+
+<div class="action-row">
+
+<button class="warning-btn" onclick="resetWallets()">♻️ Reset Wallets</button>
+
+<button class="danger-btn" onclick="hardReset()">☢️ Full Hard Reset</button>
+
+</div>
+
+</div>
+
+<div class="footer">
+✨ Smart Pharmacy Wallet Manager PWA
+</div>
+
+</div>
+
 <script>
-let deferredInstallPrompt=null;
-const installAppBtn=document.getElementById("installAppBtn");
+let deferredPrompt;
 
-window.addEventListener("beforeinstallprompt",event=>{
-    event.preventDefault();
-    deferredInstallPrompt=event;
-    if(installAppBtn) installAppBtn.classList.add("show");
+window.addEventListener('beforeinstallprompt', (e)=>{
+e.preventDefault();
+deferredPrompt=e;
+document.getElementById('installBtn').style.display='block';
 });
 
-if(installAppBtn){
-    installAppBtn.addEventListener("click",async()=>{
-        if(!deferredInstallPrompt){
-            alert("Chrome Menu (⋮) থেকে Install app / Add to Home screen নির্বাচন করুন।");
-            return;
-        }
-        deferredInstallPrompt.prompt();
-        const result=await deferredInstallPrompt.userChoice;
-        if(result.outcome==="accepted") installAppBtn.classList.remove("show");
-        deferredInstallPrompt=null;
-    });
+document.getElementById('installBtn').addEventListener('click', async ()=>{
+if(deferredPrompt){
+deferredPrompt.prompt();
+await deferredPrompt.userChoice;
 }
-
-window.addEventListener("appinstalled",()=>{
-    if(installAppBtn) installAppBtn.classList.remove("show");
 });
 
-if("serviceWorker" in navigator){
-    window.addEventListener("load",()=>{
-        navigator.serviceWorker.register("./service-worker.js")
-        .catch(err=>console.error("Service Worker registration failed:",err));
-    });
+if ('serviceWorker' in navigator) {
+window.addEventListener('load', ()=>{
+navigator.serviceWorker.register('./sw.js');
+});
 }
+
+let appData = JSON.parse(localStorage.getItem('smartPharmacyWallet')) || {
+settings:{
+installmentPercent:50,
+personalPercent:20,
+medicinePercent:30,
+monthlyTarget:50000
+},
+allocations:[],
+withdrawals:[],
+wallets:{
+installment:0,
+personal:0,
+medicine:0
+}
+};
+
+let chart;
+
+function saveData(){
+localStorage.setItem('smartPharmacyWallet',JSON.stringify(appData));
+}
+
+function saveSettings(){
+appData.settings.installmentPercent=Number(document.getElementById('installmentPercent').value);
+appData.settings.personalPercent=Number(document.getElementById('personalPercent').value);
+appData.settings.medicinePercent=Number(document.getElementById('medicinePercent').value);
+appData.settings.monthlyTarget=Number(document.getElementById('monthlyTarget').value);
+
+saveData();
+renderAll();
+}
+
+function addEntry(){
+
+const date=document.getElementById('entryDate').value;
+const amount=Number(document.getElementById('dailyAmount').value);
+
+if(!date || !amount) return;
+
+const installment=Math.round(amount*appData.settings.installmentPercent/100);
+const personal=Math.round(amount*appData.settings.personalPercent/100);
+const medicine=Math.round(amount*appData.settings.medicinePercent/100);
+
+appData.allocations.push({
+date,
+amount,
+installment,
+personal,
+medicine
+});
+
+appData.wallets.installment+=installment;
+appData.wallets.personal+=personal;
+appData.wallets.medicine+=medicine;
+
+saveData();
+renderAll();
+
+document.getElementById('dailyAmount').value='';
+
+}
+
+function withdrawMoney(){
+
+const category=document.getElementById('withdrawCategory').value;
+const amount=Number(document.getElementById('withdrawAmount').value);
+const note=document.getElementById('withdrawNote').value;
+
+if(appData.wallets[category] < amount){
+alert('Wallet এ পর্যাপ্ত Balance নেই');
+return;
+}
+
+appData.wallets[category]-=amount;
+
+appData.withdrawals.push({
+date:new Date().toISOString().split('T')[0],
+category,
+amount,
+note
+});
+
+saveData();
+renderAll();
+
+document.getElementById('withdrawAmount').value='';
+document.getElementById('withdrawNote').value='';
+
+}
+
+function renderWallets(){
+
+document.getElementById('walletInstallment').innerText=`৳${appData.wallets.installment.toLocaleString()}`;
+
+document.getElementById('walletPersonal').innerText=`৳${appData.wallets.personal.toLocaleString()}`;
+
+document.getElementById('walletMedicine').innerText=`৳${appData.wallets.medicine.toLocaleString()}`;
+
+}
+
+function renderMonths(){
+
+const selector=document.getElementById('monthSelector');
+
+selector.innerHTML='';
+
+const months=[...new Set(appData.allocations.map(a=>a.date.slice(0,7)))];
+
+if(months.length===0){
+months.push(new Date().toISOString().slice(0,7));
+}
+
+months.reverse();
+
+months.forEach(month=>{
+
+const op=document.createElement('option');
+
+op.value=month;
+op.textContent=month;
+
+selector.appendChild(op);
+
+});
+
+}
+
+function renderAllocationTable(){
+
+const month=document.getElementById('monthSelector').value;
+
+const filtered=appData.allocations.filter(a=>a.date.startsWith(month));
+
+const tbody=document.getElementById('allocationTable');
+
+tbody.innerHTML='';
+
+filtered.forEach(a=>{
+
+tbody.innerHTML += `
+<tr>
+<td>${a.date}</td>
+<td>৳${a.amount.toLocaleString()}</td>
+<td>৳${a.installment.toLocaleString()}</td>
+<td>৳${a.personal.toLocaleString()}</td>
+<td>৳${a.medicine.toLocaleString()}</td>
+</tr>
+`;
+
+});
+
+const installmentTotal=filtered.reduce((x,y)=>x+y.installment,0);
+
+const target=appData.settings.monthlyTarget;
+
+const percent=Math.min((installmentTotal/target)*100,100);
+
+document.getElementById('progressText').innerText=`Paid: ৳${installmentTotal.toLocaleString()} | Remaining: ৳${Math.max(target-installmentTotal,0).toLocaleString()}`;
+
+document.getElementById('progressFill').style.width=`${percent}%`;
+
+renderChart(filtered);
+
+}
+
+function renderWithdrawals(){
+
+const tbody=document.getElementById('withdrawTable');
+
+tbody.innerHTML='';
+
+appData.withdrawals.slice().reverse().forEach(w=>{
+
+tbody.innerHTML += `
+<tr>
+<td>${w.date}</td>
+<td>${w.category}</td>
+<td>৳${w.amount.toLocaleString()}</td>
+<td>${w.note || '-'}
+</td>
+</tr>
+`;
+
+});
+
+}
+
+function renderChart(data){
+
+const ctx=document.getElementById('fundChart');
+
+const installment=data.reduce((a,b)=>a+b.installment,0);
+const personal=data.reduce((a,b)=>a+b.personal,0);
+const medicine=data.reduce((a,b)=>a+b.medicine,0);
+
+if(chart) chart.destroy();
+
+chart=new Chart(ctx,{
+type:'doughnut',
+data:{
+labels:['Installment','Personal','Medicine'],
+datasets:[{
+data:[installment,personal,medicine],
+backgroundColor:['#22c55e','#06b6d4','#f59e0b']
+}]
+}
+});
+
+}
+
+function exportBackup(){
+
+const blob=new Blob([JSON.stringify(appData,null,2)],{
+type:'application/json'
+});
+
+const a=document.createElement('a');
+
+a.href=URL.createObjectURL(blob);
+
+a.download='smart_pharmacy_backup.json';
+
+a.click();
+
+}
+
+function importBackup(event){
+
+const file=event.target.files[0];
+
+if(!file) return;
+
+const reader=new FileReader();
+
+reader.onload=function(e){
+
+appData=JSON.parse(e.target.result);
+
+saveData();
+
+renderAll();
+
+};
+
+reader.readAsText(file);
+
+}
+
+function resetWallets(){
+
+if(confirm('সব Wallet Reset করতে চান?')){
+
+appData.wallets={
+installment:0,
+personal:0,
+medicine:0
+};
+
+saveData();
+
+renderAll();
+
+}
+
+}
+
+function hardReset(){
+
+if(confirm('সব Data Delete হবে')){
+
+localStorage.removeItem('smartPharmacyWallet');
+
+location.reload();
+
+}
+
+}
+
+function renderAll(){
+
+renderMonths();
+
+renderWallets();
+
+renderAllocationTable();
+
+renderWithdrawals();
+
+}
+
+document.getElementById('entryDate').value=new Date().toISOString().split('T')[0];
+
+renderAll();
+
 </script>
-</body></html>
+
+</body>
+</html>
